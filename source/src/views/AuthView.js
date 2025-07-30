@@ -1,6 +1,7 @@
-// source/src/views/AuthView.js
+// source/src/views/AuthView.js - Updated with Real Authentication
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { authenticateUser, registerUser } from '../services/auth';
 import { validatePasswordStrength } from '../utils/helpers';
 
 const AuthView = ({ onLogin, onShowMessage, setLoading }) => {
@@ -12,6 +13,8 @@ const AuthView = ({ onLogin, onShowMessage, setLoading }) => {
     captcha: '',
     rememberMe: false
   });
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -23,55 +26,86 @@ const AuthView = ({ onLogin, onShowMessage, setLoading }) => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    
+    if (loginAttempts >= 3) {
+      onShowMessage('Too many failed attempts. Please wait 1 hour.', 'error');
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      // Simulate login for development
-      const mockUser = {
-        username: formData.username,
-        email: formData.username + '@example.com',
-        points: 25,
-        level: 2
-      };
-
-      setTimeout(() => {
-        onLogin(mockUser);
-        setLoading(false);
-      }, 1000);
-
+      const result = await authenticateUser(formData.username, formData.password);
+      
+      if (result.success) {
+        // Handle remember me functionality
+        if (formData.rememberMe) {
+          localStorage.setItem('qOverflowRemember', 'true');
+        }
+        
+        onLogin(result.user);
+        navigate('/');
+        onShowMessage('Logged in successfully!', 'success');
+        setLoginAttempts(0);
+      } else {
+        setLoginAttempts(prev => prev + 1);
+        const remainingAttempts = 3 - (loginAttempts + 1);
+        onShowMessage(
+          `${result.error}. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining.`, 
+          'error'
+        );
+      }
     } catch (error) {
+      setLoginAttempts(prev => prev + 1);
+      onShowMessage('Login failed. Please try again.', 'error');
+    } finally {
       setLoading(false);
-      onShowMessage('Login failed', 'error');
     }
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
     
+    // Validate CAPTCHA
     if (formData.captcha !== '4') {
-      onShowMessage('Incorrect CAPTCHA answer', 'error');
+      onShowMessage('Incorrect CAPTCHA answer. 2 + 2 = 4', 'error');
       return;
     }
 
+    // Validate password strength
     const passwordCheck = validatePasswordStrength(formData.password);
     if (passwordCheck.strength === 'weak') {
       onShowMessage('Password is too weak. Use at least 11 characters.', 'error');
       return;
     }
 
+    // Validate username format
+    const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!usernameRegex.test(formData.username)) {
+      onShowMessage('Username must be alphanumeric (dashes and underscores allowed)', 'error');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Simulate registration
-      setTimeout(() => {
+      const result = await registerUser({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (result.success) {
         onShowMessage('Account created successfully! Please log in.', 'success');
         setActiveTab('login');
-        setLoading(false);
-      }, 1000);
-
+        setFormData(prev => ({ ...prev, password: '', captcha: '' }));
+      } else {
+        onShowMessage(result.error, 'error');
+      }
     } catch (error) {
+      onShowMessage('Registration failed. Please try again.', 'error');
+    } finally {
       setLoading(false);
-      onShowMessage('Registration failed', 'error');
     }
   };
 
@@ -80,13 +114,21 @@ const AuthView = ({ onLogin, onShowMessage, setLoading }) => {
     setLoading(true);
 
     try {
-      // Simulate password recovery
+      // Simulate password recovery email
       setTimeout(() => {
         onShowMessage('Recovery email sent! Check your console for the simulated email.', 'success');
-        console.log(`SIMULATED EMAIL: Password recovery link sent to ${formData.email}`);
+        console.log(`
+🔔 SIMULATED EMAIL RECOVERY:
+To: ${formData.email}
+Subject: qOverflow Password Recovery
+
+Click this link to reset your password:
+https://qoverflow.example.com/reset?token=abc123
+
+This is a simulated email for the competition.
+        `);
         setLoading(false);
       }, 1000);
-
     } catch (error) {
       setLoading(false);
       onShowMessage('Recovery failed', 'error');
@@ -165,7 +207,16 @@ const AuthView = ({ onLogin, onShowMessage, setLoading }) => {
                     />
                     <label className="form-check-label">Remember me</label>
                   </div>
-                  <button type="submit" className="btn btn-primary w-100">
+                  {loginAttempts > 0 && (
+                    <div className="alert alert-warning">
+                      Failed attempts: {loginAttempts}/3
+                    </div>
+                  )}
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary w-100"
+                    disabled={loginAttempts >= 3}
+                  >
                     Login
                   </button>
                 </form>

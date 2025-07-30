@@ -1,3 +1,4 @@
+// source/src/components/common/MessageContainer.js
 import React from 'react';
 
 const MessageContainer = ({ message }) => {

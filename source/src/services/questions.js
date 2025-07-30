@@ -1,4 +1,4 @@
-// source/src/services/questions.js
+// source/src/services/questions.js - Updated with missing getUserVote function
 import api from './api';
 
 // Search questions
@@ -52,6 +52,21 @@ export const voteOnQuestion = async (questionId, username, voteData) => {
     return response;
   } catch (error) {
     console.error('Error voting on question:', error);
+    throw error;
+  }
+};
+
+// Check user's vote on question - MISSING FUNCTION ADDED
+export const getUserVote = async (questionId, username) => {
+  try {
+    const response = await api.get(`/questions/${questionId}/vote/${username}`);
+    return response;
+  } catch (error) {
+    if (error.response?.status === 404) {
+      // User hasn't voted - this is normal
+      return { success: true, vote: null };
+    }
+    console.error('Error getting user vote:', error);
     throw error;
   }
 };

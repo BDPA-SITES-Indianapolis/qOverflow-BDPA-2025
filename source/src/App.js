@@ -7,6 +7,7 @@ import QAView from './views/QAView';
 import MailView from './views/MailView';
 import DashboardView from './views/DashboardView';
 import AuthView from './views/AuthView';
+import CreateQuestionView from './views/CreateQuestionView';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import MessageContainer from './components/common/MessageContainer';
 import './App.css';
@@ -100,6 +101,16 @@ function App() {
               path="/dashboard" 
               element={
                 <DashboardView 
+                  currentUser={currentUser} 
+                  onShowMessage={showMessage}
+                  setLoading={setLoading}
+                />
+              } 
+            />
+            <Route 
+              path="/create-question" 
+              element={
+                <CreateQuestionView 
                   currentUser={currentUser} 
                   onShowMessage={showMessage}
                   setLoading={setLoading}

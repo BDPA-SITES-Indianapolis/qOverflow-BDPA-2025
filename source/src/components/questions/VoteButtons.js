@@ -1,11 +1,12 @@
 // source/src/components/questions/VoteButtons.js
-import React, { useState } from 'react';
-import { voteOnQuestion, voteOnAnswer } from '../../services/questions';
+import React, { useState, useEffect } from 'react';
+import { voteOnQuestion, voteOnAnswer, getUserVote } from '../../services/questions';
 import { getUserLevel } from '../../utils/helpers';
 
 const VoteButtons = ({ 
   itemType, 
   itemId, 
+  questionId, // needed for answer votes
   upvotes, 
   downvotes, 
   currentUser, 
@@ -18,6 +19,29 @@ const VoteButtons = ({
 
   const netVotes = currentUpvotes - currentDownvotes;
   const userLevel = getUserLevel(currentUser?.points || 1);
+
+  // Load user's existing vote when component mounts
+  useEffect(() => {
+    const loadUserVote = async () => {
+      if (!currentUser) return;
+      
+      try {
+        const voteResponse = await getUserVote(
+          itemType === 'question' ? itemId : questionId, 
+          currentUser.username
+        );
+        
+        if (voteResponse.success && voteResponse.vote) {
+          setUserVote(voteResponse.vote); // 'upvoted' or 'downvoted'
+        }
+      } catch (error) {
+        // User hasn't voted, which is fine
+        console.log('No existing vote found');
+      }
+    };
+
+    loadUserVote();
+  }, [itemId, questionId, itemType, currentUser]);
 
   const handleVote = async (voteType) => {
     if (!currentUser) {
@@ -36,27 +60,23 @@ const VoteButtons = ({
       return;
     }
 
-    // Prevent voting on own content (would be checked by API)
-    // if (currentUser.username === creator) {
-    //   onShowMessage('You cannot vote on your own content', 'error');
-    //   return;
-    // }
-
     setIsVoting(true);
 
     try {
-      let response;
       const operation = userVote === voteType ? 'decrement' : 'increment';
+      const target = voteType === 'upvote' ? 'upvotes' : 'downvotes';
+      
+      let response;
       
       if (itemType === 'question') {
         response = await voteOnQuestion(itemId, currentUser.username, {
           operation,
-          target: voteType === 'upvote' ? 'upvotes' : 'downvotes'
+          target
         });
       } else if (itemType === 'answer') {
-        response = await voteOnAnswer(itemId, currentUser.username, {
+        response = await voteOnAnswer(questionId, itemId, currentUser.username, {
           operation,
-          target: voteType === 'upvote' ? 'upvotes' : 'downvotes'
+          target
         });
       }
 
@@ -95,35 +115,51 @@ const VoteButtons = ({
     } catch (error) {
       console.error('Voting error:', error);
       
-      // For development, simulate voting
-      const operation = userVote === voteType ? 'decrement' : 'increment';
-      
-      if (operation === 'increment') {
-        if (voteType === 'upvote') {
-          setCurrentUpvotes(prev => prev + 1);
-          if (userVote === 'downvoted') {
-            setCurrentDownvotes(prev => prev - 1);
-          }
-          setUserVote('upvoted');
-        } else {
-          setCurrentDownvotes(prev => prev + 1);
-          if (userVote === 'upvoted') {
-            setCurrentUpvotes(prev => prev - 1);
-          }
-          setUserVote('downvoted');
-        }
-        onShowMessage(`${voteType === 'upvote' ? 'Upvoted' : 'Downvoted'} (demo mode)`, 'success');
+      // Handle specific error cases
+      if (error.message && error.message.includes('already voted')) {
+        onShowMessage('You have already voted on this item', 'error');
+      } else if (error.response?.status === 403) {
+        onShowMessage('Insufficient privileges to vote', 'error');
+      } else if (error.response?.status === 555) {
+        onShowMessage('API temporary error (expected behavior)', 'info');
+        
+        // For development, simulate the vote anyway
+        simulateVote(voteType);
       } else {
-        if (voteType === 'upvote') {
-          setCurrentUpvotes(prev => prev - 1);
-        } else {
-          setCurrentDownvotes(prev => prev - 1);
-        }
-        setUserVote(null);
-        onShowMessage('Vote removed (demo mode)', 'info');
+        onShowMessage('Voting failed. Please try again.', 'error');
       }
     } finally {
       setIsVoting(false);
+    }
+  };
+
+  // Simulate vote for development/testing
+  const simulateVote = (voteType) => {
+    const operation = userVote === voteType ? 'decrement' : 'increment';
+    
+    if (operation === 'increment') {
+      if (voteType === 'upvote') {
+        setCurrentUpvotes(prev => prev + 1);
+        if (userVote === 'downvoted') {
+          setCurrentDownvotes(prev => prev - 1);
+        }
+        setUserVote('upvoted');
+      } else {
+        setCurrentDownvotes(prev => prev + 1);
+        if (userVote === 'upvoted') {
+          setCurrentUpvotes(prev => prev - 1);
+        }
+        setUserVote('downvoted');
+      }
+      onShowMessage(`${voteType === 'upvote' ? 'Upvoted' : 'Downvoted'} (demo mode)`, 'success');
+    } else {
+      if (voteType === 'upvote') {
+        setCurrentUpvotes(prev => prev - 1);
+      } else {
+        setCurrentDownvotes(prev => prev - 1);
+      }
+      setUserVote(null);
+      onShowMessage('Vote removed (demo mode)', 'info');
     }
   };
 
@@ -133,7 +169,11 @@ const VoteButtons = ({
         className={`btn btn-sm ${userVote === 'upvoted' ? 'btn-success' : 'btn-outline-success'}`}
         onClick={() => handleVote('upvote')}
         disabled={isVoting || !currentUser}
-        title={userLevel < 2 ? 'Requires Level 2 to upvote' : 'Upvote'}
+        title={
+          !currentUser ? 'Please log in to vote' :
+          userLevel < 2 ? 'Requires Level 2 to upvote' : 
+          userVote === 'upvoted' ? 'Remove upvote' : 'Upvote'
+        }
       >
         <i className="fas fa-chevron-up"></i>
       </button>
@@ -144,10 +184,22 @@ const VoteButtons = ({
         className={`btn btn-sm ${userVote === 'downvoted' ? 'btn-danger' : 'btn-outline-danger'}`}
         onClick={() => handleVote('downvote')}
         disabled={isVoting || !currentUser}
-        title={userLevel < 4 ? 'Requires Level 4 to downvote' : 'Downvote'}
+        title={
+          !currentUser ? 'Please log in to vote' :
+          userLevel < 4 ? 'Requires Level 4 to downvote' : 
+          userVote === 'downvoted' ? 'Remove downvote' : 'Downvote'
+        }
       >
         <i className="fas fa-chevron-down"></i>
       </button>
+      
+      {isVoting && (
+        <div className="text-center mt-1">
+          <div className="spinner-border spinner-border-sm" role="status">
+            <span className="visually-hidden">Voting...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

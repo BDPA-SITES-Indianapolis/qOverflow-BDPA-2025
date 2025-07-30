@@ -1,19 +1,22 @@
 // source/src/views/BuffetView.js
-import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import QuestionCard from '../components/questions/QuestionCard';
+import QuestionModal from '../components/questions/QuestionModal';
 import { searchQuestions } from '../services/questions';
 
 const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
   const [questions, setQuestions] = useState([]);
   const [sortType, setSortType] = useState('recent');
+  const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   
   useEffect(() => {
     loadQuestions();
-  }, [sortType, searchParams]);
+  }, [sortType, searchParams]); // Remove loadQuestions from dependency array
 
-  const loadQuestions = async () => {
+  const loadQuestions = useCallback(async () => {
     setLoading(true);
     try {
       const searchQuery = searchParams.get('search');
@@ -24,18 +27,35 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
       
       if (response.success) {
         setQuestions(response.questions || []);
+        
+        if (response.questions?.length === 0) {
+          onShowMessage('No questions found', 'info');
+        }
       } else {
         onShowMessage('Failed to load questions', 'error');
+        // Fallback to sample data for development
+        setQuestions(getSampleQuestions());
       }
     } catch (error) {
       console.error('Error loading questions:', error);
-      onShowMessage('Error loading questions', 'error');
-      // Show sample data for development
+      
+      // Handle specific API errors
+      if (error.response?.status === 401) {
+        onShowMessage('API authentication failed. Check your API key.', 'error');
+      } else if (error.response?.status === 429) {
+        onShowMessage('Too many requests. Please wait a moment.', 'error');
+      } else if (error.response?.status === 555) {
+        onShowMessage('API returned temporary error (this is expected behavior)', 'info');
+      } else {
+        onShowMessage('Error loading questions. Using sample data.', 'error');
+      }
+      
+      // Show sample data as fallback
       setQuestions(getSampleQuestions());
     } finally {
       setLoading(false);
     }
-  };
+  }, [sortType, searchParams, onShowMessage, setLoading]); // Add dependencies
 
   const getSortParameter = (sortType) => {
     switch (sortType) {
@@ -87,8 +107,18 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
       onShowMessage('Please log in to ask a question', 'error');
       return;
     }
-    // Navigate to create question (implement later)
-    onShowMessage('Create question feature coming soon!', 'info');
+    
+    // Option 1: Navigate to dedicated page
+    navigate('/create-question');
+    
+    // Option 2: Show modal (uncomment to use modal instead)
+    // setShowQuestionModal(true);
+  };
+
+  const handleQuestionCreated = () => {
+    // Refresh questions list after new question is created
+    loadQuestions();
+    setShowQuestionModal(false);
   };
 
   return (
@@ -183,6 +213,15 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
           </li>
         </ul>
       </nav>
+
+      {/* Question Creation Modal (if using modal option) */}
+      <QuestionModal
+        show={showQuestionModal}
+        onClose={() => setShowQuestionModal(false)}
+        currentUser={currentUser}
+        onShowMessage={onShowMessage}
+        setLoading={setLoading}
+      />
     </div>
   );
 };
