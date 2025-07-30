@@ -3,11 +3,14 @@
 A Q&A platform similar to Stack Overflow built for the BDPA National High School Computer Competition 2025.
 
 ## 🚀 Quick Setup for Team Members
+**Students**: Read the [SETUP.md](SETUP.md) file for complete setup instructions!
 
 1. Clone this repository
 # Clone the repository
 git clone https://github.com/YOUR-USERNAME/qOverflow-BDPA-2025.git
-cd qOverflow-BDPA-2025
+cd qOverflow-BDPA-2025/source
+npm install
+npm start
 
 # Create root-level files
 touch README.md
@@ -31,3 +34,11 @@ Phase 2: Create
 - Michael Amoah/Shaun Valentine - Coaches
 
 ---
+
+# qOverflow - BDPA NHSCC 2025 Competition
+
+A Q&A platform similar to Stack Overflow built for the BDPA National High School Computer Competition 2025.
+
+
+
+
