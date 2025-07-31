@@ -1,4 +1,4 @@
-// source/src/components/questions/VoteButtons.js
+// source/src/components/questions/VoteButtons.js - CLEAN VERSION
 import React, { useState, useEffect } from 'react';
 import { voteOnQuestion, voteOnAnswer, getUserVote } from '../../services/questions';
 import { getUserLevel } from '../../utils/helpers';
@@ -20,27 +20,30 @@ const VoteButtons = ({
   const netVotes = currentUpvotes - currentDownvotes;
   const userLevel = getUserLevel(currentUser?.points || 1);
 
-  // Load user's existing vote when component mounts
+  // Load user's existing vote when component mounts (DISABLED FOR NOW)
   useEffect(() => {
-    const loadUserVote = async () => {
-      if (!currentUser) return;
-      
-      try {
-        const voteResponse = await getUserVote(
-          itemType === 'question' ? itemId : questionId, 
-          currentUser.username
-        );
-        
-        if (voteResponse.success && voteResponse.vote) {
-          setUserVote(voteResponse.vote); // 'upvoted' or 'downvoted'
-        }
-      } catch (error) {
-        // User hasn't voted, which is fine
-        console.log('No existing vote found');
-      }
-    };
+    // Temporarily disable automatic vote loading to prevent rate limiting
+    // This will be re-enabled once API calls are optimized
+    
+    // const loadUserVote = async () => {
+    //   if (!currentUser) return;
+    //   
+    //   try {
+    //     const voteResponse = await getUserVote(
+    //       itemType === 'question' ? itemId : questionId, 
+    //       currentUser.username
+    //     );
+    //     
+    //     if (voteResponse.success && voteResponse.vote) {
+    //       setUserVote(voteResponse.vote); // 'upvoted' or 'downvoted'
+    //     }
+    //   } catch (error) {
+    //     // User hasn't voted, which is fine
+    //     console.log('No existing vote found');
+    //   }
+    // };
 
-    loadUserVote();
+    // loadUserVote();
   }, [itemId, questionId, itemType, currentUser]);
 
   const handleVote = async (voteType) => {
@@ -125,6 +128,8 @@ const VoteButtons = ({
         
         // For development, simulate the vote anyway
         simulateVote(voteType);
+      } else if (error.response?.status === 429) {
+        onShowMessage('Rate limited. Please wait before voting again.', 'error');
       } else {
         onShowMessage('Voting failed. Please try again.', 'error');
       }

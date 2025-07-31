@@ -1,15 +1,29 @@
-// source/src/utils/helpers.js
+// source/src/utils/helpers.js - CLEAN Gravatar implementation
 import CryptoJS from 'crypto-js';
 
-// Gravatar URL generation
+// COMPETITION-COMPLIANT Gravatar URL generation
 export const getGravatarUrl = (email) => {
-  if (!email) return 'https://www.gravatar.com/avatar/default?d=identicon';
+  if (!email) {
+    // Default for users without email - returns identicon
+    return 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=identicon';
+  }
+
+  // Step 1: Trim and lowercase the email (as per Gravatar docs)
+  const trimmedEmail = email.trim().toLowerCase();
   
-  const hash = CryptoJS.MD5(email.toLowerCase().trim()).toString();
+  // Step 2: Create MD5 hash
+  const hash = CryptoJS.MD5(trimmedEmail).toString();
+  
+  // Step 3: Create Gravatar URL with identicon fallback (as specified in problem statement)
   return `https://www.gravatar.com/avatar/${hash}?d=identicon`;
 };
 
-// Format time ago
+// Synchronous version (same function)
+export const getGravatarUrlSync = (email) => {
+  return getGravatarUrl(email);
+};
+
+// Format time ago (unchanged)
 export const formatTimeAgo = (timestamp) => {
   const now = Date.now();
   const diff = now - timestamp;
@@ -26,7 +40,7 @@ export const formatTimeAgo = (timestamp) => {
   return new Date(timestamp).toLocaleDateString();
 };
 
-// Get user level based on points
+// Get user level based on points (unchanged)
 export const getUserLevel = (points = 1) => {
   if (points >= 10000) return 7;
   if (points >= 3000) return 6;
@@ -37,7 +51,7 @@ export const getUserLevel = (points = 1) => {
   return 1;
 };
 
-// Get level privileges
+// Get level privileges (unchanged)
 export const getLevelPrivileges = (level) => {
   const privileges = [];
   
@@ -52,14 +66,14 @@ export const getLevelPrivileges = (level) => {
   return privileges;
 };
 
-// Validate password strength
+// Validate password strength (unchanged)
 export const validatePasswordStrength = (password) => {
   if (password.length <= 10) return { strength: 'weak', color: 'danger' };
   if (password.length <= 17) return { strength: 'moderate', color: 'warning' };
   return { strength: 'strong', color: 'success' };
 };
 
-// Truncate text
+// Truncate text (unchanged)
 export const truncateText = (text, maxLength = 150) => {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + '...';

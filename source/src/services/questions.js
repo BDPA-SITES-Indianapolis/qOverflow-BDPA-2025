@@ -1,4 +1,4 @@
-// source/src/services/questions.js - Updated with missing getUserVote function
+// source/src/services/questions.js - Clean version without duplicates
 import api from './api';
 
 // Search questions
@@ -56,7 +56,7 @@ export const voteOnQuestion = async (questionId, username, voteData) => {
   }
 };
 
-// Check user's vote on question - MISSING FUNCTION ADDED
+// Check user's vote on question
 export const getUserVote = async (questionId, username) => {
   try {
     const response = await api.get(`/questions/${questionId}/vote/${username}`);
