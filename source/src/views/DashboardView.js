@@ -1,4 +1,4 @@
-// source/src/views/DashboardView.js - FIXED VERSION
+// source/src/views/DashboardView.js
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import QuestionCard from '../components/questions/QuestionCard';

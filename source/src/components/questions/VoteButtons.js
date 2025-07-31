@@ -20,30 +20,8 @@ const VoteButtons = ({
   const netVotes = currentUpvotes - currentDownvotes;
   const userLevel = getUserLevel(currentUser?.points || 1);
 
-  // Load user's existing vote when component mounts (DISABLED FOR NOW)
   useEffect(() => {
-    // Temporarily disable automatic vote loading to prevent rate limiting
-    // This will be re-enabled once API calls are optimized
-    
-    // const loadUserVote = async () => {
-    //   if (!currentUser) return;
-    //   
-    //   try {
-    //     const voteResponse = await getUserVote(
-    //       itemType === 'question' ? itemId : questionId, 
-    //       currentUser.username
-    //     );
-    //     
-    //     if (voteResponse.success && voteResponse.vote) {
-    //       setUserVote(voteResponse.vote); // 'upvoted' or 'downvoted'
-    //     }
-    //   } catch (error) {
-    //     // User hasn't voted, which is fine
-    //     console.log('No existing vote found');
-    //   }
-    // };
-
-    // loadUserVote();
+   
   }, [itemId, questionId, itemType, currentUser]);
 
   const handleVote = async (voteType) => {

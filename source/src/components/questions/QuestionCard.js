@@ -19,7 +19,7 @@ const QuestionCard = ({ question, currentUser, onShowMessage }) => {
   } = question;
 
   const netVotes = upvotes - downvotes;
-  const userLevel = getUserLevel(1); // We'd get user points from API
+  const userLevel = getUserLevel(1); // get user points from API
   const timeAgo = formatTimeAgo(createdAt);
 
   return (

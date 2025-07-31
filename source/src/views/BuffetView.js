@@ -1,4 +1,4 @@
-// source/src/views/BuffetView.js - WITH WORKING PAGINATION
+// source/src/views/BuffetView.js 
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import QuestionCard from '../components/questions/QuestionCard';
@@ -91,7 +91,7 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
   };
 
   const getSampleQuestions = () => {
-    // Generate more sample questions for pagination demo
+    // Generate more sample questions for pagination demo (use when API is banned)
     const baseQuestions = [
       {
         question_id: '1',
