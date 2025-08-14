@@ -9,12 +9,13 @@ import { debounce } from '../utils/helpers';
 
 const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
   const [questions, setQuestions] = useState([]);
-  const [allQuestions, setAllQuestions] = useState([]); // Store all questions for pagination
+  const [allQuestions, setAllQuestions] = useState([]);
   const [sortType, setSortType] = useState('recent');
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState(searchParams.get('search') || ''); // Add a controlled search input state
   const navigate = useNavigate();
 
   const QUESTIONS_PER_PAGE = 10; // Show 10 questions per page
@@ -25,40 +26,84 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
     setCurrentPage(page);
   }, [searchParams]);
 
-  // Load questions when sort type changes or component mounts
+  // Load questions when sort type or search changes
   useEffect(() => {
     loadQuestions();
-  }, [sortType]);
+    // eslint-disable-next-line
+  }, [sortType, searchParams]);
 
-  // Update displayed questions when page or all questions change
+  // Update displayed questions when page or allQuestions change
   useEffect(() => {
     updateDisplayedQuestions();
+    // eslint-disable-next-line
   }, [currentPage, allQuestions]);
 
+  // Keep searchInput in sync with URL
+  useEffect(() => {
+    setSearchInput(searchParams.get('search') || '');
+  }, [searchParams]);
+
+  // Unified filter function
+  function filterQuestions(questions, searchInput) {
+    if (!searchInput || !searchInput.trim()) return questions;
+
+    // Extract tags (e.g. #react #api)
+    const tagMatches = searchInput.match(/#\w[\w-]*/g) || [];
+    const tags = tagMatches.map(tag => tag.slice(1).toLowerCase());
+
+    // Remove tags from search input to get the text part
+    const textSearch = searchInput.replace(/#\w[\w-]*/g, '').trim().toLowerCase();
+    console.log('Filtering:', { textSearch, tags });
+    return questions.filter(q => {
+      // Text match (title or body)
+
+      let matchesText = true;
+      if (textSearch) {
+        //Split textSearch into words and match if ANY word is present in title or text
+        const words = textSearch.split(/\s+/).filter(Boolean);
+        matchesText = words.some(word =>
+          q.title.toLowerCase().includes(word) || q.text.toLowerCase().includes(word)
+        );
+      }
+        
+      // Tag match (all tags must be present)
+      const matchesTags =
+        tags.length === 0 ||
+        (q.tags && tags.every(tag =>
+          q.tags.some(qt => qt.toLowerCase() === tag)
+        ));
+
+      return matchesText && matchesTags;
+    });
+  }
+
+  // Load questions from API or fallback to sample data
   const loadQuestions = async () => {
     setIsLoading(true);
-    
+
     try {
-      const searchQuery = searchParams.get('search');
+      const searchQuery = searchParams.get('search') || '';
       const response = await searchQuestions({
         sort: getSortParameter(sortType),
         search: searchQuery
       });
-      
+
       if (response.success) {
         const questionsData = response.questions || [];
         setAllQuestions(questionsData);
-        
+
         if (questionsData.length === 0) {
           onShowMessage('No questions found', 'info');
         }
       } else {
         onShowMessage('Failed to load questions', 'error');
-        setAllQuestions(getSampleQuestions());
+        // Filter sample questions here
+        const filtered = filterQuestions(getSampleQuestions(), searchQuery);
+        setAllQuestions(filtered);
       }
     } catch (error) {
-      console.error('Error loading questions:', error);
-      
+       console.error('Error loading questions:', error);
+     
       if (error.message?.includes('555')) {
         onShowMessage('API temporary error (showing sample data)', 'info');
       } else if (error.response?.status === 429) {
@@ -66,14 +111,16 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
       } else {
         onShowMessage('Error loading questions. Showing sample data.', 'warning');
       }
-      
-      // Show sample data as fallback
-      setAllQuestions(getSampleQuestions());
+      // Fallback to filtered sample questions
+      const searchQuery = searchParams.get('search') || '';
+      const filtered = filterQuestions(getSampleQuestions(), searchQuery);
+      setAllQuestions(filtered);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Update questions for current page
   const updateDisplayedQuestions = () => {
     const startIndex = (currentPage - 1) * QUESTIONS_PER_PAGE;
     const endIndex = startIndex + QUESTIONS_PER_PAGE;
@@ -81,6 +128,7 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
     setQuestions(pageQuestions);
   };
 
+  // Sort parameter mapping
   const getSortParameter = (sortType) => {
     switch (sortType) {
       case 'best': return 'u';
@@ -90,6 +138,7 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
     }
   };
 
+  // Sample/mock questions for fallback
   const getSampleQuestions = () => {
     // Generate more sample questions for pagination demo (use when API is banned)
     const baseQuestions = [
@@ -103,7 +152,9 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
         downvotes: 0,
         answers: 3,
         views: 25,
-        status: 'open'
+        status: 'open',
+        tags: ['react', 'authentication', 'frontend'],
+        hasAcceptedAnswer: true
       },
       {
         question_id: '2',
@@ -115,7 +166,9 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
         downvotes: 1,
         answers: 5,
         views: 42,
-        status: 'open'
+        status: 'open',
+        tags: ['api', 'integration', 'best practices'],
+        hasAcceptedAnswer: false
       },
       {
         question_id: '3',
@@ -127,7 +180,9 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
         downvotes: 0,
         answers: 7,
         views: 68,
-        status: 'open'
+        status: 'open',
+        tags: ['react', 'hooks', 'state management'],
+        hasAcceptedAnswer: false
       }
     ];
 
@@ -142,13 +197,20 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
         createdAt: Date.now() - (i * 3600000), // Spread over hours
         views: Math.floor(Math.random() * 100) + 10,
         upvotes: Math.floor(Math.random() * 20),
-        answers: Math.floor(Math.random() * 10)
+        answers: Math.floor(Math.random() * 10),
+        tags: [...base.tags] // <-- Use real tags, not suffixed
       });
     }
-    
+
     return sampleQuestions;
   };
 
+  // Sort button styling
+  const getSortButtonClass = (sortValue) => {
+    return `btn ${sortType === sortValue ? 'btn-primary' : 'btn-outline-primary'} me-2`;
+  };
+
+  // Handle sort change
   const handleSortChange = (newSortType) => {
     setSortType(newSortType);
     setCurrentPage(1); // Reset to first page when sorting changes
@@ -159,6 +221,7 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
     setSearchParams(newSearchParams);
   };
 
+  // Handle page change
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
     
@@ -175,23 +238,22 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Show create question modal or navigate
   const showCreateQuestion = () => {
     if (!currentUser) {
       onShowMessage('Please log in to ask a question', 'error');
       return;
     }
-    
     navigate('/create-question');
   };
 
+  // After question created
   const handleQuestionCreated = () => {
     loadQuestions();
     setShowQuestionModal(false);
   };
 
-  const getSortButtonClass = (sortValue) => {
-    return `btn ${sortType === sortValue ? 'btn-primary' : 'btn-outline-primary'} me-2`;
-  };
+  
 
   return (
     <div className="buffet-view">
@@ -202,17 +264,18 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
           <p className="text-muted mb-0">
             {allQuestions.length} question{allQuestions.length !== 1 ? 's' : ''}
             {searchParams.get('search') && (
-              <span> matching "{searchParams.get('search')}"</span>
+              <>
+                <span> matching "{searchParams.get('search').replace(/#\w[\w-]*/g, '').trim()}"</span>
+                {(searchParams.get('search').match(/#\w[\w-]*/g) || []).map((tag, idx) => (
+                  <span key={idx} className="badge bg-light text-dark border ms-2">{tag}</span>
+                ))}
+              </>
             )}
           </p>
         </div>
-        
         <div className="d-flex gap-2">
           {currentUser ? (
-            <button 
-              className="btn btn-primary"
-              onClick={showCreateQuestion}
-            >
+            <button className="btn btn-primary" onClick={showCreateQuestion}>
               <i className="fas fa-plus me-1"></i>
               Ask Question
             </button>
@@ -225,36 +288,75 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
         </div>
       </div>
 
+      {/* Unified Search Bar */}
+      <form
+        className="mb-4"
+        onSubmit={e => {
+          e.preventDefault();
+          const newSearchParams = new URLSearchParams(searchParams);
+          if (searchInput.trim()) {
+            newSearchParams.set('search', searchInput.trim());
+          } else {
+            newSearchParams.delete('search');
+          }
+          newSearchParams.delete('page');
+          setSearchParams(newSearchParams);
+          setCurrentPage(1);
+          loadQuestions();
+        }}
+      >
+        <div className="input-group" style={{ maxWidth: 500 }}>
+          <input
+            type="text"
+            className="form-control"
+            placeholder='Search questions or tags (e.g. "react #api #frontend")'
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
+          />
+          {searchParams.get('search') && (
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={() => {
+                const newSearchParams = new URLSearchParams(searchParams);
+                newSearchParams.delete('search');
+                newSearchParams.delete('page');
+                setSearchParams(newSearchParams);
+                setSearchInput('');
+                setCurrentPage(1);
+                loadQuestions();
+              }}
+            >
+              Clear
+            </button>
+          )}
+          <button className="btn btn-primary" type="submit">
+            <i className="fas fa-search me-1"></i>Search
+          </button>
+        </div>
+        <div className="form-text">
+          To search by tag, add <code>#tagname</code> (e.g. <code>#react</code>).
+        </div>
+      </form>
+
       {/* Sort Options */}
       <div className="sort-section mb-4">
         <div className="d-flex align-items-center flex-wrap">
           <span className="me-3 fw-medium">Sort by:</span>
           <div className="btn-group" role="group">
-            <button 
-              className={getSortButtonClass('recent')}
-              onClick={() => handleSortChange('recent')}
-            >
+            <button className={getSortButtonClass('recent')} onClick={() => handleSortChange('recent')}>
               <i className="fas fa-clock me-1"></i>
               Recent
             </button>
-            <button 
-              className={getSortButtonClass('best')}
-              onClick={() => handleSortChange('best')}
-            >
+            <button className={getSortButtonClass('best')} onClick={() => handleSortChange('best')}>
               <i className="fas fa-thumbs-up me-1"></i>
               Best
             </button>
-            <button 
-              className={getSortButtonClass('interesting')}
-              onClick={() => handleSortChange('interesting')}
-            >
+            <button className={getSortButtonClass('interesting')} onClick={() => handleSortChange('interesting')}>
               <i className="fas fa-fire me-1"></i>
               Interesting
             </button>
-            <button 
-              className={getSortButtonClass('hot')}
-              onClick={() => handleSortChange('hot')}
-            >
+            <button className={getSortButtonClass('hot')} onClick={() => handleSortChange('hot')}>
               <i className="fas fa-bolt me-1"></i>
               Hot
             </button>
@@ -267,13 +369,15 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
         <div className="alert alert-info mb-4">
           <i className="fas fa-search me-2"></i>
           Search results for: <strong>{searchParams.get('search')}</strong>
-          <button 
+          <button
             className="btn btn-sm btn-outline-primary ms-2"
             onClick={() => {
               const newSearchParams = new URLSearchParams(searchParams);
               newSearchParams.delete('search');
               newSearchParams.delete('page');
               setSearchParams(newSearchParams);
+              setSearchInput('');
+              setCurrentPage(1);
               loadQuestions();
             }}
           >
@@ -302,13 +406,13 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
               </div>
               <h3>No questions found</h3>
               <p className="text-muted">
-                {searchParams.get('search') 
+                {searchParams.get('search')
                   ? `No questions match "${searchParams.get('search')}". Try different keywords.`
                   : 'Be the first to ask a question!'
                 }
               </p>
               {currentUser && (
-                <button 
+                <button
                   className="btn btn-primary"
                   onClick={showCreateQuestion}
                 >
@@ -326,6 +430,21 @@ const BuffetView = ({ currentUser, onShowMessage, setLoading }) => {
                     question={question}
                     currentUser={currentUser}
                     onShowMessage={onShowMessage}
+                    // Add tag click handler
+                    onTagClick={tag => {
+                      // When a tag is clicked, add it to the search bar as #tag
+                      let newSearch = searchInput;
+                      if (!newSearch.includes(`#${tag}`)) {
+                        newSearch = `${newSearch} #${tag}`.trim();
+                      }
+                      const newSearchParams = new URLSearchParams(searchParams);
+                      newSearchParams.set('search', newSearch);
+                      newSearchParams.delete('page');
+                      setSearchParams(newSearchParams);
+                      setSearchInput(newSearch);
+                      setCurrentPage(1);
+                      loadQuestions();
+                    }}
                   />
                 ))}
               </div>

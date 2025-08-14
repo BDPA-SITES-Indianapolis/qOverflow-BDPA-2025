@@ -6,14 +6,18 @@ import MarkdownEditor from '../components/common/MarkdownEditor';
 import { getGravatarUrl, formatTimeAgo } from '../utils/helpers';
 import { validateMailForm } from '../utils/validation';
 import api from '../services/api';
+import '../components/common/MailView.css';
 
 const MailView = ({ currentUser, onShowMessage, setLoading }) => {
   const [activeTab, setActiveTab] = useState('inbox');
   const [messages, setMessages] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
+
+  // Track read/unread state for each message (by mail_id)
+  const [readStatus, setReadStatus] = useState({});
   const [showCompose, setShowCompose] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+ 
   // Compose form state
   const [composeForm, setComposeForm] = useState({
     receiver: '',
@@ -34,21 +38,28 @@ const MailView = ({ currentUser, onShowMessage, setLoading }) => {
     setIsLoading(true);
     try {
       const response = await api.get(`/mail/${currentUser.username}`);
-      
+      let sortedMessages;
       if (response.success) {
-        // Sort messages by newest first
-        const sortedMessages = (response.messages || []).sort((a, b) => 
-          b.createdAt - a.createdAt
-        );
+        sortedMessages = (response.messages || []).sort((a, b) => b.createdAt - a.createdAt);
         setMessages(sortedMessages);
       } else {
         onShowMessage('Failed to load messages', 'error');
-        setMessages(getSampleMessages());
+        sortedMessages = getSampleMessages();
+        setMessages(sortedMessages);
       }
+      // Initialize readStatus: all messages unread by default
+      const initialStatus = {};
+      sortedMessages.forEach(msg => { initialStatus[msg.mail_id] = false; });
+      setReadStatus(initialStatus);
     } catch (error) {
       console.error('Error loading messages:', error);
       onShowMessage('Error loading messages. Showing sample data.', 'info');
-      setMessages(getSampleMessages());
+      const fallback = getSampleMessages();
+      setMessages(fallback);
+      // Initialize readStatus for fallback
+      const initialStatus = {};
+      fallback.forEach(msg => { initialStatus[msg.mail_id] = false; });
+      setReadStatus(initialStatus);
     } finally {
       setIsLoading(false);
     }
@@ -128,12 +139,12 @@ const MailView = ({ currentUser, onShowMessage, setLoading }) => {
 
       if (response.success) {
         onShowMessage('Message sent successfully!', 'success');
-        
+       
         // Reset form
         setComposeForm({ receiver: '', subject: '', text: '' });
         setComposeErrors({});
         setShowCompose(false);
-        
+       
         // Reload messages
         loadMessages();
       } else {
@@ -141,7 +152,7 @@ const MailView = ({ currentUser, onShowMessage, setLoading }) => {
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      
+     
       if (error.response?.status === 404) {
         onShowMessage('Recipient not found', 'error');
       } else if (error.response?.status === 413) {
@@ -176,7 +187,7 @@ const MailView = ({ currentUser, onShowMessage, setLoading }) => {
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>Private Messages</h1>
-        <button 
+        <button
           className="btn btn-primary"
           onClick={() => setShowCompose(true)}
         >
@@ -210,7 +221,7 @@ const MailView = ({ currentUser, onShowMessage, setLoading }) => {
             <div className="card mb-4">
               <div className="card-header d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">Compose Message</h5>
-                <button 
+                <button
                   className="btn-close"
                   onClick={() => {
                     setShowCompose(false);
@@ -331,9 +342,16 @@ const MailView = ({ currentUser, onShowMessage, setLoading }) => {
                   {messages.map(message => (
                     <div
                       key={message.mail_id}
-                      className={`card mb-3 ${selectedMessage?.mail_id === message.mail_id ? 'border-primary' : ''}`}
+                      className={`card mb-3 ${selectedMessage?.mail_id === message.mail_id ? 'border-primary' : ''} ${!readStatus[message.mail_id] ? 'bg-light border-2 border-warning' : ''}`}
                       style={{ cursor: 'pointer' }}
-                      onClick={() => setSelectedMessage(selectedMessage?.mail_id === message.mail_id ? null : message)}
+                      onClick={() => {
+                        if (selectedMessage?.mail_id === message.mail_id) {
+                          setSelectedMessage(null);
+                        } else {
+                          setSelectedMessage(message);
+                          setReadStatus(prev => ({ ...prev, [message.mail_id]: true }));
+                        }
+                      }}
                     >
                       <div className="card-body">
                         <div className="d-flex justify-content-between align-items-start">
@@ -347,13 +365,21 @@ const MailView = ({ currentUser, onShowMessage, setLoading }) => {
                                 height={32}
                               />
                               <div>
-                                <h6 className="mb-0">{message.subject}</h6>
+                                <h6 className="mb-0" id="blacktext">
+                                  {message.subject}
+                                  {!readStatus[message.mail_id] && (
+                                    <span className="badge bg-warning text-dark ms-2">Unread</span>
+                                  )}
+                                  {readStatus[message.mail_id] && (
+                                    <span className="badge bg-secondary ms-2">Read</span>
+                                  )}
+                                </h6>
                                 <small className="text-muted">
                                   From: <strong>{message.sender}</strong> • {formatTimeAgo(message.createdAt)}
                                 </small>
                               </div>
                             </div>
-                            
+                           
                             {selectedMessage?.mail_id === message.mail_id && (
                               <div className="message-content mt-3 p-3 bg-light rounded">
                                 <ReactMarkdown>
@@ -362,7 +388,7 @@ const MailView = ({ currentUser, onShowMessage, setLoading }) => {
                               </div>
                             )}
                           </div>
-                          
+                         
                           <i className={`fas fa-chevron-${selectedMessage?.mail_id === message.mail_id ? 'down' : 'right'} text-muted`}></i>
                         </div>
                       </div>

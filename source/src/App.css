@@ -12,35 +12,100 @@ body {
   background-color: #f8f9fa;
 }
 
-.navbar-brand {
-  font-weight: bold;
-  color: var(--bdpa-primary) !important;
+.nav-header {
+  background: linear-gradient(120deg, #2c3e50 0%, #3498db 100%);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border-radius: 18px;
+  margin: 18px 0 24px 0;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.18);
+  position: relative;
+  z-index: 10;
 }
 
-.nav-header {
-  background: linear-gradient(135deg, var(--bdpa-primary), var(--bdpa-secondary));
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.navbar-brand {
+  font-weight: bold;
+  color: #fff !important;
+  font-size: 2rem;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 8px rgba(44,62,80,0.3);
+  transition: transform 0.2s;
+}
+.navbar-brand:hover {
+  transform: scale(1.07);
+  color: #000 !important;
+}
+
+.navbar-nav .btn, .navbar-nav .btn-outline-light, .navbar-nav .btn-light {
+  margin-right: 0.5rem;
+  border-radius: 20px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(52,152,219,0.10);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.navbar-nav .btn:hover, .navbar-nav .btn-outline-light:hover, .navbar-nav .btn-light:hover {
+  background: linear-gradient(120deg, #2c3e50 0%, #3498db 100%);
+  color: #fff !important;
+  box-shadow: 0 4px 16px rgba(52,152,219,0.25);
+  transform: translateY(-2px) scale(1.05);
+}
+
+.search-container .form-control {
+  border-radius: 20px 0 0 20px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(44,62,80,0.10);
+  transition: box-shadow 0.2s, border 0.2s;
+}
+.search-container .form-control:focus {
+  box-shadow: 0 0 0 3px #3498db55;
+  border: 1.5px solid #3498db;
+}
+.search-container .btn {
+  border-radius: 0 20px 20px 0;
+  border: none;
+  background: #e74c3c;
+  color: #fff;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.search-container .btn:hover {
+  background: #3498db;
+  box-shadow: 0 2px 8px #3498db55;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2.5px solid #fff;
+  box-shadow: 0 2px 8px #3498db55;
+  transition: box-shadow 0.2s, border 0.2s;
+}
+.user-avatar:hover {
+  box-shadow: 0 0 0 4px #e74c3c55;
+  border: 2.5px solid blue
 }
 
 .user-level {
-  background: var(--bdpa-success);
-  color: white;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.8em;
+  background: linear-gradient(120deg, #2c3e50 0%, #3498db 100%);
+  color: #fff;
+  padding: 3px 12px;
+  border-radius: 16px;
+  font-size: 0.9em;
+  font-weight: bold;
+  box-shadow: 0 2px 8px #27ae6055;
+  margin-right: 0.5rem;
 }
 
 .points-display {
-  background: var(--bdpa-warning);
-  color: white;
-  padding: 2px 8px;
-  border-radius: 8px;
-  font-size: 0.9em;
-}
-
-.view-container {
-  min-height: 80vh;
-  padding: 20px 0;
+  background: linear-gradient(120deg, #2c3e50 0%, #3498db 100%);
+  color: #fff;
+  padding: 3px 12px;
+  border-radius: 12px;
+  font-size: 0.95em;
+  font-weight: bold;
+  box-shadow: 0 2px 8px #f39c1255;
+  margin-right: 0.5rem;
 }
 
 .question-card {
@@ -51,6 +116,13 @@ body {
 .question-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.question-card:hover .question-text,
+.question-card:hover .question-title,
+.question-card:hover .question-text h1,
+.question-card:hover .question-text h2,
+.question-card:hover .question-text h3 {
+  color: #111 !important;
 }
 
 .vote-buttons {
@@ -66,13 +138,6 @@ body {
   font-size: 1.1em;
   margin: 5px 0;
   color: var(--bdpa-primary);
-}
-
-.user-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
 }
 
 .error-message {
@@ -223,7 +288,7 @@ body {
 }
 
 .question-title {
-  color: var(--bdpa-primary);
+  color: #222;
   margin-bottom: 0.5rem;
   line-height: 1.2;
 }
@@ -238,11 +303,13 @@ body {
 
 .question-text {
   line-height: 1.6;
+  color: #222;
 }
 
 .question-text h1, .question-text h2, .question-text h3 {
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
+  color: #222;
 }
 
 .question-text pre {
@@ -380,32 +447,32 @@ body {
   .qa-view {
     padding: 0 0.5rem;
   }
-  
+ 
   .question-title {
     font-size: 1.5rem;
   }
-  
+ 
   .question-meta {
     flex-direction: column;
     gap: 0.5rem !important;
   }
-  
+ 
   .answer-card .d-flex {
     flex-direction: column;
   }
-  
+ 
   .answer-card .vote-buttons {
     flex-direction: row;
     justify-content: center;
     margin-bottom: 1rem;
     position: static;
   }
-  
+ 
   .comment-form .d-flex {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+ 
   .comment-form .btn {
     align-self: flex-start;
   }
@@ -419,10 +486,133 @@ body {
   .btn {
     display: none !important;
   }
-  
+ 
   .question-content,
   .answer-card {
     border: 1px solid #ccc !important;
     page-break-inside: avoid;
+  }
+}
+
+/* Modern AuthView Styles */
+.auth-view {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+}
+.auth-view .card {
+  border-radius: 24px;
+  box-shadow: 0 8px 32px 0 rgba(44,62,80,0.18);
+  border: none;
+  overflow: hidden;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(2px);
+  animation: auth-fade-in 0.7s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes auth-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(40px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.auth-view .card-header {
+  background: transparent;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.auth-view .nav-tabs {
+  border-bottom: none;
+  justify-content: center;
+  gap: 1rem;
+}
+.auth-view .nav-link {
+  border: none;
+  background: none;
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1.1rem;
+  border-radius: 18px 18px 0 0;
+  transition: background 0.2s, color 0.2s;
+}
+.auth-view .nav-link.active, .auth-view .nav-link:hover {
+  background: #f4f4f4;
+  color: #2c3e50;
+}
+.auth-view .card-body {
+  padding: 2.5rem 2rem 2rem 2rem;
+}
+.auth-view .form-label {
+  font-weight: 500;
+  color: #2c3e50;
+}
+.auth-view .form-control {
+  border-radius: 12px;
+  border: 1.5px solid #e0e0e0;
+  font-size: 1.08rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafd;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+.auth-view .form-control:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px #3498db33;
+  background: #fff;
+}
+.auth-view .btn-primary {
+  background: linear-gradient(90deg, #3498db 0%, #2c3e50 100%);
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 8px #3498db22;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.auth-view .btn-primary:hover {
+  background: linear-gradient(90deg, #2c3e50 0%, #3498db 100%);
+  box-shadow: 0 4px 16px #2c3e5044;
+}
+.auth-view .form-check-label {
+  color: #2c3e50;
+}
+.auth-view .alert-warning {
+  background: #fff3cd;
+  color: #856404;
+  border-radius: 8px;
+  border: none;
+}
+.auth-view .form-text {
+  font-size: 0.97em;
+  color: #888;
+}
+.auth-view .col-md-6,
+.auth-view .col-lg-5 {
+  max-width: 480px;
+  flex: 0 0 100%;
+}
+@media (min-width: 768px) {
+  .auth-view .col-md-6,
+  .auth-view .col-lg-5 {
+    max-width: 540px;
+  }
+}
+@media (min-width: 992px) {
+  .auth-view .col-md-6,
+  .auth-view .col-lg-5 {
+    max-width: 600px;
+  }
+}
+.auth-view .card-body {
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+}
+@media (max-width: 600px) {
+  .auth-view .card-body {
+    padding: 1.2rem 0.5rem;
   }
 }

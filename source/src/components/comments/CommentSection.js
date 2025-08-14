@@ -4,13 +4,13 @@ import CommentCard from './CommentCard';
 import CommentForm from './CommentForm';
 import { getComments } from '../../services/comments';
 
-const CommentSection = ({ 
+const CommentSection = ({
   parentType, // 'question' or 'answer'
-  parentId, 
+  parentId,
   questionId, // needed for answer comments
-  currentUser, 
-  canComment, 
-  onShowMessage 
+  currentUser,
+  canComment,
+  onShowMessage
 }) => {
   const [comments, setComments] = useState([]);
   const [showCommentForm, setShowCommentForm] = useState(false);
@@ -22,10 +22,10 @@ const CommentSection = ({
       setIsLoading(true);
       try {
         const response = await getComments(parentType, parentId, questionId);
-        
+       
         if (response.success) {
           // Sort comments by creation time (oldest first)
-          const sortedComments = (response.comments || []).sort((a, b) => 
+          const sortedComments = (response.comments || []).sort((a, b) =>
             a.createdAt - b.createdAt
           );
           setComments(sortedComments);
@@ -87,6 +87,9 @@ const CommentSection = ({
               currentUser={currentUser}
               onShowMessage={onShowMessage}
               onDelete={() => handleDeleteComment(comment.comment_id)}
+              parentType={parentType}
+              parentId={parentId}
+              questionId={questionId}
             />
           ))}
         </div>

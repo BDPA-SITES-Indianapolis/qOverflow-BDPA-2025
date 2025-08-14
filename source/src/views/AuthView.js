@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { authenticateUser, registerUser } from '../services/auth';
 import { validatePasswordStrength } from '../utils/helpers';
 
-const AuthView = ({ onLogin, onShowMessage, setLoading }) => {
+import { useEffect } from 'react';
+const AuthView = ({ currentUser, onLogin, onShowMessage, setLoading }) => {
   const [activeTab, setActiveTab] = useState('login');
   const [formData, setFormData] = useState({
     username: '',
@@ -26,23 +27,23 @@ const AuthView = ({ onLogin, onShowMessage, setLoading }) => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
+   
     if (loginAttempts >= 3) {
       onShowMessage('Too many failed attempts. Please wait 1 hour.', 'error');
       return;
     }
-    
+   
     setLoading(true);
 
     try {
       const result = await authenticateUser(formData.username, formData.password);
-      
+     
       if (result.success) {
         // Handle remember me functionality
         if (formData.rememberMe) {
           localStorage.setItem('qOverflowRemember', 'true');
         }
-        
+       
         onLogin(result.user);
         navigate('/');
         onShowMessage('Logged in successfully!', 'success');
@@ -51,7 +52,7 @@ const AuthView = ({ onLogin, onShowMessage, setLoading }) => {
         setLoginAttempts(prev => prev + 1);
         const remainingAttempts = 3 - (loginAttempts + 1);
         onShowMessage(
-          `${result.error}. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining.`, 
+          `${result.error}. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining.`,
           'error'
         );
       }
@@ -65,7 +66,7 @@ const AuthView = ({ onLogin, onShowMessage, setLoading }) => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    
+   
     // Validate CAPTCHA
     if (formData.captcha !== '4') {
       onShowMessage('Incorrect CAPTCHA answer. 2 + 2 = 4', 'error');
@@ -137,15 +138,26 @@ This is a simulated email for the competition.
 
   const passwordStrength = validatePasswordStrength(formData.password);
 
+  // If already logged in, redirect to dashboard
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [currentUser, navigate]);
+
+  if (currentUser) {
+    return null;
+  }
+
   return (
     <div className="auth-view">
       <div className="row justify-content-center">
-        <div className="col-md-6">
-          <div className="card">
+        <div className="col-md-6 col-lg-5">
+          <div className="card shadow-lg border-0">
             <div className="card-header">
               <ul className="nav nav-tabs card-header-tabs">
                 <li className="nav-item">
-                  <button 
+                  <button
                     className={`nav-link ${activeTab === 'login' ? 'active' : ''}`}
                     onClick={() => setActiveTab('login')}
                   >
@@ -153,7 +165,7 @@ This is a simulated email for the competition.
                   </button>
                 </li>
                 <li className="nav-item">
-                  <button 
+                  <button
                     className={`nav-link ${activeTab === 'register' ? 'active' : ''}`}
                     onClick={() => setActiveTab('register')}
                   >
@@ -161,7 +173,7 @@ This is a simulated email for the competition.
                   </button>
                 </li>
                 <li className="nav-item">
-                  <button 
+                  <button
                     className={`nav-link ${activeTab === 'recovery' ? 'active' : ''}`}
                     onClick={() => setActiveTab('recovery')}
                   >
@@ -170,15 +182,14 @@ This is a simulated email for the competition.
                 </li>
               </ul>
             </div>
-            
             <div className="card-body">
               {/* Login Form */}
               {activeTab === 'login' && (
-                <form onSubmit={handleLogin}>
+                <form onSubmit={handleLogin} autoComplete="on">
                   <div className="mb-3">
                     <label className="form-label">Username</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="form-control"
                       name="username"
                       value={formData.username}
@@ -188,8 +199,8 @@ This is a simulated email for the competition.
                   </div>
                   <div className="mb-3">
                     <label className="form-label">Password</label>
-                    <input 
-                      type="password" 
+                    <input
+                      type="password"
                       className="form-control"
                       name="password"
                       value={formData.password}
@@ -198,8 +209,8 @@ This is a simulated email for the competition.
                     />
                   </div>
                   <div className="mb-3 form-check">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       className="form-check-input"
                       name="rememberMe"
                       checked={formData.rememberMe}
@@ -212,8 +223,8 @@ This is a simulated email for the competition.
                       Failed attempts: {loginAttempts}/3
                     </div>
                   )}
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="btn btn-primary w-100"
                     disabled={loginAttempts >= 3}
                   >
@@ -224,11 +235,11 @@ This is a simulated email for the competition.
 
               {/* Register Form */}
               {activeTab === 'register' && (
-                <form onSubmit={handleRegister}>
+                <form onSubmit={handleRegister} autoComplete="on">
                   <div className="mb-3">
                     <label className="form-label">Username</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="form-control"
                       name="username"
                       value={formData.username}
@@ -240,8 +251,8 @@ This is a simulated email for the competition.
                   </div>
                   <div className="mb-3">
                     <label className="form-label">Email</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       className="form-control"
                       name="email"
                       value={formData.email}
@@ -251,8 +262,8 @@ This is a simulated email for the competition.
                   </div>
                   <div className="mb-3">
                     <label className="form-label">Password</label>
-                    <input 
-                      type="password" 
+                    <input
+                      type="password"
                       className="form-control"
                       name="password"
                       value={formData.password}
@@ -260,7 +271,7 @@ This is a simulated email for the competition.
                       required
                     />
                     <div className="form-text">
-                      Password strength: 
+                      Password strength:
                       <span className={`text-${passwordStrength.color} fw-bold ms-1`}>
                         {passwordStrength.strength}
                       </span>
@@ -268,8 +279,8 @@ This is a simulated email for the competition.
                   </div>
                   <div className="mb-3">
                     <label className="form-label">CAPTCHA: What is 2 + 2?</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="form-control"
                       name="captcha"
                       value={formData.captcha}
@@ -285,11 +296,11 @@ This is a simulated email for the competition.
 
               {/* Recovery Form */}
               {activeTab === 'recovery' && (
-                <form onSubmit={handleRecovery}>
+                <form onSubmit={handleRecovery} autoComplete="on">
                   <div className="mb-3">
                     <label className="form-label">Email Address</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       className="form-control"
                       name="email"
                       value={formData.email}

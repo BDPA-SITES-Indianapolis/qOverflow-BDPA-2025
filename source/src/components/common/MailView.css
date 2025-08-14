@@ -1,0 +1,45 @@
+
+/* MailView.css - Make MailView look like DashboardView */
+
+.mail-view {
+  background: none;
+  min-height: 100vh;
+  padding: 32px 0;
+}
+
+.mail-view h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2563eb;
+  letter-spacing: -1px;
+}
+
+.mail-view .card {
+  border-radius: 18px;
+  box-shadow: 0 4px 24px 0 rgba(37,99,235,0.10);
+  border: none;
+  transition: box-shadow 0.2s;
+}
+
+.mail-view .card:hover {
+  box-shadow: 0 8px 32px 0 rgba(37,99,235,0.18);
+}
+
+.mail-view .card-body {
+  padding: 2rem 1.5rem;
+}
+
+.mail-view .badge {
+  font-size: 1rem;
+  padding: 0.5em 1em;
+  border-radius: 12px;
+}
+
+.mail-view .messages-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+#blacktext {
+  color: #111 !important;
+} 

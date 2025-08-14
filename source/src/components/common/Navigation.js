@@ -1,10 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getGravatarUrl } from '../../utils/helpers';
 
+
 const Navigation = ({ currentUser, onLogout, onShowMessage }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('qOverflowDarkMode') === 'true';
+  });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+    localStorage.setItem('qOverflowDarkMode', darkMode);
+  }, [darkMode]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -29,11 +42,11 @@ const Navigation = ({ currentUser, onLogout, onShowMessage }) => {
     <nav className="navbar navbar-expand-lg navbar-dark nav-header">
       <div className="container">
         <Link className="navbar-brand d-flex align-items-center" to="/">
-          <img 
-            src="./bdpa-logo.png" 
-            alt="BDPA Logo" 
-            width="40" 
-            height="40" 
+          <img
+            src="./bdpa-logo.png"
+            alt="BDPA Logo"
+            width="40"
+            height="40"
             className="me-2"
             onError={(e) => {
               e.target.style.display = 'none';
@@ -43,13 +56,23 @@ const Navigation = ({ currentUser, onLogout, onShowMessage }) => {
         </Link>
 
         <div className="navbar-nav ms-auto d-flex align-items-center">
+          {/* Dark Mode Toggle */}
+          <button
+            className={`btn btn-outline-light me-3${darkMode ? ' active' : ''}`}
+            style={{minWidth: 44, fontWeight: 600}}
+            onClick={() => setDarkMode((d) => !d)}
+            aria-label="Toggle dark mode"
+          >
+            {darkMode ? ' Light' : 'Dark'}
+          </button>
+
           {/* Search Bar */}
           <div className="search-container me-3">
             <form onSubmit={handleSearch} className="d-flex">
               <div className="input-group">
-                <input 
-                  type="text" 
-                  className="form-control" 
+                <input
+                  type="text"
+                  className="form-control"
                   placeholder="Search questions..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -76,11 +99,14 @@ const Navigation = ({ currentUser, onLogout, onShowMessage }) => {
           {/* Authenticated User Navigation */}
           {currentUser && (
             <div className="d-flex align-items-center">
-              <img 
-                src={getGravatarUrl(currentUser.email)} 
-                alt="User Avatar" 
-                className="user-avatar me-2"
-              />
+              <Link to="/dashboard">
+                <img
+                  src={getGravatarUrl(currentUser.email)}
+                  alt="User Avatar"
+                  className="user-avatar me-2"
+                  style={{ cursor: 'pointer' }}
+                />
+              </Link>
               <span className="user-level me-2">
                 Level {getUserLevel(currentUser.points)}
               </span>

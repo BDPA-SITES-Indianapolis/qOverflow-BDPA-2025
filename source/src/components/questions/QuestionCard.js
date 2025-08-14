@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import VoteButtons from './VoteButtons';
 import { getGravatarUrl, formatTimeAgo, getUserLevel } from '../../utils/helpers';
 
-const QuestionCard = ({ question, currentUser, onShowMessage }) => {
+const QuestionCard = ({ question, currentUser, onShowMessage, onTagClick }) => {
   const {
     question_id,
     title,
@@ -15,7 +15,10 @@ const QuestionCard = ({ question, currentUser, onShowMessage }) => {
     downvotes,
     answers,
     views,
-    status
+    status,
+    tags, // <-- Add tags to destructure
+    hasAcceptedAnswer,
+     bounty // { amount, awarded, ... } or falsy/null if none
   } = question;
 
   const netVotes = upvotes - downvotes;
@@ -34,15 +37,25 @@ const QuestionCard = ({ question, currentUser, onShowMessage }) => {
             currentUser={currentUser}
             onShowMessage={onShowMessage}
           />
-          
+
           <div className="flex-grow-1">
-            <h5 className="card-title">
+            <h5 className="card-title d-flex align-items-center gap-2">
               <Link 
                 to={`/question/${question_id}`}
                 className="text-decoration-none"
               >
                 {title}
               </Link>
+                   {bounty && !bounty.awarded && (
+                <button className="btn btn-warning btn-sm ms-2" title={`Bounty: ${bounty.amount} pts`} disabled style={{ pointerEvents: 'none', opacity: 0.85 }}>
+                  <i className="fas fa-gift me-1"></i> {bounty.amount} pts
+                </button>
+              )}
+              {hasAcceptedAnswer && (
+                <span className="badge bg-success ms-2" title="Accepted answer">
+                  <i className="fas fa-check-circle me-1"></i> Accepted
+                </span>
+              )}
               {status !== 'open' && (
                 <span className={`badge ms-2 ${
                   status === 'closed' ? 'bg-danger' : 'bg-warning'
@@ -51,7 +64,24 @@ const QuestionCard = ({ question, currentUser, onShowMessage }) => {
                 </span>
               )}
             </h5>
-            
+
+            {/* Tags display */}
+            {tags && tags.length > 0 && (
+              <div className="mb-2">
+                {tags.map((tag, idx) => (
+                  <span
+                    key={idx}
+                    className="badge bg-light text-dark border me-1"
+                    style={{ cursor: onTagClick ? 'pointer' : 'default' }}
+                    onClick={onTagClick ? () => onTagClick(tag) : undefined}
+                    title="Search for this tag"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <p className="card-text text-muted">
               {text.length > 150 ? text.substring(0, 150) + '...' : text}
             </p>

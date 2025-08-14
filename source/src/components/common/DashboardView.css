@@ -1,0 +1,151 @@
+.dashboard-view {
+  background: none;
+  min-height: 100vh;
+  padding: 32px 0;
+  color: #111;
+}
+
+body.dark-mode .dashboard-view {
+  color: black !important;
+}
+
+.dashboard-view, .dashboard-view * {
+  transition: color 0.3s, background 0.3s;
+}
+
+body.dark-mode .dashboard-view a,
+body.dark-mode .dashboard-view h1,
+body.dark-mode .dashboard-view h2,
+body.dark-mode .dashboard-view h3,
+body.dark-mode .dashboard-view h4,
+body.dark-mode .dashboard-view h5,
+body.dark-mode .dashboard-view h6,
+body.dark-mode .dashboard-view ul,
+body.dark-mode .dashboard-view ol,
+body.dark-mode .dashboard-view p,
+body.dark-mode .dashboard-view span,
+body.dark-mode .dashboard-view small,
+body.dark-mode .dashboard-view li,
+body.dark-mode .dashboard-view label,
+body.dark-mode .dashboard-view .list-group-item {
+  color: #fff !important;
+}
+
+.dashboard-view a,
+.dashboard-view h1,
+.dashboard-view h2,
+.dashboard-view h3,
+.dashboard-view h4,
+.dashboard-view h5,
+.dashboard-view h6,
+.dashboard-view ul,
+.dashboard-view ol,
+.dashboard-view p,
+.dashboard-view span,
+.dashboard-view small,
+.dashboard-view li,
+.dashboard-view label,
+.dashboard-view .list-group-item {
+  color: #111;
+}
+#blacktext {
+  color: #111 !important;
+} 
+#greytext {
+  color: #555 !important;
+}
+#blueText {
+  color: #2563eb !important;
+}
+#greenText {
+  color: #10b981 !important;
+}
+#orangeText {
+  color: #f59e42 !important;
+}
+#redText {
+  color: #ef4444 !important;
+}
+
+.dashboard-view h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2563eb;
+  letter-spacing: -1px;
+}
+
+.dashboard-view .card {
+  border-radius: 18px;
+  box-shadow: 0 4px 24px 0 rgba(37,99,235,0.10);
+  border: none;
+  transition: box-shadow 0.2s;
+}
+
+.dashboard-view .card:hover {
+  box-shadow: 0 8px 32px 0 rgba(37,99,235,0.18);
+}
+
+.dashboard-view .card-body {
+  padding: 2rem 1.5rem;
+}
+
+.dashboard-view .badge {
+  font-size: 1rem;
+  padding: 0.5em 1em;
+  border-radius: 12px;
+}
+
+.dashboard-view .questions-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 2rem;
+}
+
+.dashboard-view .user-questions-section h4 {
+  font-weight: 600;
+  color: #2563eb;
+}
+
+.dashboard-view .account-settings-section h4 {
+  font-weight: 600;
+  color: #2563eb;
+}
+
+
+.dashboard-view .btn-primary, .dashboard-view .btn-outline-primary {
+  background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px 0 rgba(59,130,246,0.12);
+  transition: background 0.2s;
+}
+
+.dashboard-view .btn-primary:hover, .dashboard-view .btn-outline-primary:hover {
+  background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+}
+
+.dashboard-view .btn-outline-secondary, .dashboard-view .btn-outline-danger {
+  border-width: 2px;
+  font-weight: 500;
+}
+
+.dashboard-view .spinner-border {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.dashboard-view .rounded-circle {
+  border: 3px solid #2563eb;
+  box-shadow: 0 2px 8px 0 rgba(37,99,235,0.10);
+}
+
+.dashboard-view .text-primary {
+  color: #2563eb !important;
+}
+.dashboard-view .text-success {
+  color: #10b981 !important;
+}
+.dashboard-view .text-warning {
+  color: #f59e42 !important;
+}

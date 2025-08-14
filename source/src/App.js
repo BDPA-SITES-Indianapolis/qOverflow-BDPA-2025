@@ -1,6 +1,6 @@
 // source/src/App.js
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Navigation from './components/common/Navigation';
 import BuffetView from './views/BuffetView';
 import QAView from './views/QAView';
@@ -52,80 +52,97 @@ function App() {
     showMessage('Logged out successfully', 'success');
   };
 
+  // Helper to protect routes
+  const RequireAuth = ({ children }) => {
+    const location = useLocation();
+    if (!currentUser) {
+      return <Navigate to="/auth" state={{ from: location }} replace />;
+    }
+    return children;
+  };
+
   return (
     <Router>
       <div className="App">
-        <Navigation 
-          currentUser={currentUser} 
+        <Navigation
+          currentUser={currentUser}
           onLogout={handleLogout}
           onShowMessage={showMessage}
         />
-        
         <div className="container view-container">
           {loading && <LoadingSpinner />}
-          
           <MessageContainer message={message} />
-
           <Routes>
-            <Route 
-              path="/" 
+            <Route
+              path="/auth"
               element={
-                <BuffetView 
-                  currentUser={currentUser} 
-                  onShowMessage={showMessage}
-                  setLoading={setLoading}
-                />
-              } 
-            />
-            <Route 
-              path="/question/:questionId" 
-              element={
-                <QAView 
-                  currentUser={currentUser} 
-                  onShowMessage={showMessage}
-                  setLoading={setLoading}
-                />
-              } 
-            />
-            <Route 
-              path="/mail" 
-              element={
-                <MailView 
-                  currentUser={currentUser} 
-                  onShowMessage={showMessage}
-                  setLoading={setLoading}
-                />
-              } 
-            />
-            <Route 
-              path="/dashboard" 
-              element={
-                <DashboardView 
-                  currentUser={currentUser} 
-                  onShowMessage={showMessage}
-                  setLoading={setLoading}
-                />
-              } 
-            />
-            <Route 
-              path="/create-question" 
-              element={
-                <CreateQuestionView 
-                  currentUser={currentUser} 
-                  onShowMessage={showMessage}
-                  setLoading={setLoading}
-                />
-              } 
-            />
-            <Route 
-              path="/auth" 
-              element={
-                <AuthView 
+                <AuthView
+                  currentUser={currentUser}
                   onLogin={handleLogin}
                   onShowMessage={showMessage}
                   setLoading={setLoading}
                 />
-              } 
+              }
+            />
+            <Route
+              path="/"
+              element={
+                <RequireAuth>
+                  <BuffetView
+                    currentUser={currentUser}
+                    onShowMessage={showMessage}
+                    setLoading={setLoading}
+                  />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/question/:questionId"
+              element={
+                <RequireAuth>
+                  <QAView
+                    currentUser={currentUser}
+                    onShowMessage={showMessage}
+                    setLoading={setLoading}
+                  />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/mail"
+              element={
+                <RequireAuth>
+                  <MailView
+                    currentUser={currentUser}
+                    onShowMessage={showMessage}
+                    setLoading={setLoading}
+                  />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <RequireAuth>
+                  <DashboardView
+                    currentUser={currentUser}
+                    onShowMessage={showMessage}
+                    setLoading={setLoading}
+                  />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/create-question"
+              element={
+                <RequireAuth>
+                  <CreateQuestionView
+                    currentUser={currentUser}
+                    onShowMessage={showMessage}
+                    setLoading={setLoading}
+                  />
+                </RequireAuth>
+              }
             />
           </Routes>
         </div>

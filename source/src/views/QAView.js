@@ -7,17 +7,27 @@ import VoteButtons from '../components/questions/VoteButtons';
 import AnswerCard from '../components/answers/AnswerCard';
 import AnswerForm from '../components/answers/AnswerForm';
 import CommentSection from '../components/comments/CommentSection';
-import { 
-  getQuestion, 
-  getQuestionAnswers, 
-  incrementQuestionViews 
+import {
+  getQuestion,
+  getQuestionAnswers,
+  incrementQuestionViews
 } from '../services/questions';
 import { getGravatarUrlSync, formatTimeAgo, getUserLevel } from '../utils/helpers';
+
+// Helper to copy text to clipboard
+const copyToClipboard = async (text, onShowMessage) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    if (onShowMessage) onShowMessage('Link copied to clipboard!', 'success');
+  } catch (err) {
+    if (onShowMessage) onShowMessage('Failed to copy link', 'error');
+  }
+};
 
 const QAView = ({ currentUser, onShowMessage, setLoading }) => {
   const { questionId } = useParams();
   const navigate = useNavigate();
-  
+ 
   const [question, setQuestion] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [showAnswerForm, setShowAnswerForm] = useState(false);
@@ -35,7 +45,7 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
 
       setLoading(true);
       setQuestionError(null);
-      
+     
       try {
         // Check if this is a sample question
         if (questionId.startsWith('sample-')) {
@@ -46,10 +56,10 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
         }
 
         const response = await getQuestion(questionId);
-        
+       
         if (response.success) {
           setQuestion(response.question);
-          
+         
           // FIXED: Only try to increment views if question loaded successfully
           // And don't let it block the rest of the page
           setTimeout(async () => {
@@ -61,13 +71,13 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
               console.log('View increment failed (this is okay):', viewError.message);
             }
           }, 1000); // Wait 1 second before incrementing views
-          
+         
         } else {
           throw new Error('Question not found');
         }
       } catch (error) {
         console.error('Error loading question:', error);
-        
+       
         if (error.response?.status === 404) {
           setQuestionError('Question not found');
           onShowMessage('Question not found', 'error');
@@ -91,7 +101,7 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
   // Load answers - FIXED: Only load if question exists and loading is complete
   useEffect(() => {
     if (!question) return;
-    
+   
     const loadAnswers = async () => {
       if (question.question_id.startsWith('sample-')) {
         setAnswers(getSampleAnswers());
@@ -101,7 +111,7 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
       setIsLoadingAnswers(true);
       try {
         const response = await getQuestionAnswers(questionId);
-        
+       
         if (response.success) {
           let sortedAnswers = [...(response.answers || [])];
           sortedAnswers = sortAnswers(sortedAnswers, sortBy);
@@ -111,11 +121,11 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
         }
       } catch (error) {
         console.error('Error loading answers:', error);
-        
+       
         if (error.response?.status === 429) {
           onShowMessage('Rate limited loading answers. Using sample data.', 'info');
         }
-        
+       
         setAnswers(getSampleAnswers());
       } finally {
         setIsLoadingAnswers(false);
@@ -158,7 +168,7 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
         hasAcceptedAnswer: false
       }
     };
-    
+   
     return sampleQuestions[id] || sampleQuestions['sample-fallback'];
   };
 
@@ -177,11 +187,11 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
 
   const sortAnswers = (answersArray, sortType) => {
     const sorted = [...answersArray];
-    
+   
     sorted.sort((a, b) => {
       if (a.accepted && !b.accepted) return -1;
       if (!a.accepted && b.accepted) return 1;
-      
+     
       switch (sortType) {
         case 'votes':
           return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes);
@@ -193,7 +203,7 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
           return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes);
       }
     });
-    
+   
     return sorted;
   };
 
@@ -201,26 +211,26 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
     setAnswers(prev => sortAnswers([newAnswer, ...prev], sortBy));
     setShowAnswerForm(false);
     onShowMessage('Answer posted successfully!', 'success');
-    
+   
     setQuestion(prev => prev ? { ...prev, answers: prev.answers + 1 } : null);
   };
 
   const handleAnswerUpdate = (updatedAnswer) => {
-    setAnswers(prev => 
-      prev.map(answer => 
+    setAnswers(prev =>
+      prev.map(answer =>
         answer.answer_id === updatedAnswer.answer_id ? updatedAnswer : answer
       )
     );
   };
 
   const handleAcceptAnswer = (answerId) => {
-    setAnswers(prev => 
+    setAnswers(prev =>
       prev.map(answer => ({
         ...answer,
         accepted: answer.answer_id === answerId
       }))
     );
-    
+   
     setQuestion(prev => prev ? { ...prev, hasAcceptedAnswer: true } : null);
     onShowMessage('Answer accepted!', 'success');
   };
@@ -231,8 +241,8 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
       <div className="text-center py-5">
         <h3>⚠️ {questionError}</h3>
         <p className="text-muted">The question you're looking for could not be loaded.</p>
-        <button 
-          className="btn btn-primary" 
+        <button
+          className="btn btn-primary"
           onClick={() => navigate('/')}
         >
           Go Back Home
@@ -256,7 +266,7 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
   const canAcceptAnswers = currentUser && question && currentUser.username === question.creator;
   const canAnswer = currentUser && getUserLevel(currentUser.points) >= 1;
   const canComment = currentUser && (
-    getUserLevel(currentUser.points) >= 3 || 
+    getUserLevel(currentUser.points) >= 3 ||
     currentUser.username === question?.creator
   );
 
@@ -266,7 +276,7 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
       {question.question_id.startsWith('sample-') && (
         <div className="alert alert-info mb-4">
           <i className="fas fa-info-circle me-2"></i>
-          <strong>Sample Data:</strong> Showing sample content due to API rate limiting. 
+          <strong>Sample Data:</strong> Showing sample content due to API rate limiting.
           Real data will load when the rate limit resets.
         </div>
       )}
@@ -274,7 +284,6 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
       {/* Question Header */}
       <div className="question-header mb-4">
         <h1 className="question-title">{question.title}</h1>
-        
         <div className="question-meta d-flex flex-wrap gap-3 text-muted mb-3">
           <span>
             <i className="fas fa-clock me-1"></i>
@@ -291,6 +300,14 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
               {question.status.toUpperCase()}
             </span>
           )}
+          {/* Share Question Button */}
+          <button
+            className="btn btn-outline-secondary btn-sm ms-2"
+            title="Copy link to this question"
+            onClick={() => copyToClipboard(window.location.origin + `/questions/${question.question_id}`, onShowMessage)}
+          >
+            <i className="fas fa-share"></i> Share
+          </button>
         </div>
       </div>
 
@@ -355,7 +372,7 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
           <h3>
             {answers.length} Answer{answers.length !== 1 ? 's' : ''}
           </h3>
-          
+         
           {/* Sort Options */}
           <div className="dropdown">
             <button
@@ -370,24 +387,24 @@ const QAView = ({ currentUser, onShowMessage, setLoading }) => {
             </button>
             <ul className="dropdown-menu">
               <li>
-                <button 
-                  className="dropdown-item" 
+                <button
+                  className="dropdown-item"
                   onClick={() => setSortBy('votes')}
                 >
                   Highest Score (default)
                 </button>
               </li>
               <li>
-                <button 
-                  className="dropdown-item" 
+                <button
+                  className="dropdown-item"
                   onClick={() => setSortBy('newest')}
                 >
                   Date modified (newest first)
                 </button>
               </li>
               <li>
-                <button 
-                  className="dropdown-item" 
+                <button
+                  className="dropdown-item"
                   onClick={() => setSortBy('oldest')}
                 >
                   Date modified (oldest first)

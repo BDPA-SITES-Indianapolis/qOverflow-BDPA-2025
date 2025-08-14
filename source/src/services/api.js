@@ -1,62 +1,46 @@
-// source/src/services/api.js - WITH SIMPLE RATE LIMITING
+// source/src/services/api.js
 import axios from 'axios';
 import { API_BASE_URL, API_KEY } from '../utils/constants';
 
-// Simple rate limiting
-let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 1000; // 1000ms between requests (2 per second max)
+const MIN_REQUEST_INTERVAL = 1000; // adjust to actual API limit
+let requestQueue = Promise.resolve();
 
-// Create axios instance with default config
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
   headers: {
-    'Authorization': `bearer ${API_KEY}`,
+    'Authorization': `Bearer ${API_KEY}`,
     'Content-Type': 'application/json'
   }
 });
 
-// Request interceptor with rate limiting
-api.interceptors.request.use(
-  async (config) => {
-    // Rate limiting - wait if needed
-    const now = Date.now();
-    const timeSinceLastRequest = now - lastRequestTime;
-    
-    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-      const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
-      console.log(`⏱️ Rate limiting: waiting ${waitTime}ms`);
-      await new Promise(resolve => setTimeout(resolve, waitTime));
-    }
-    
-    lastRequestTime = Date.now();
+// Queue each request to ensure spacing
+api.interceptors.request.use(config => {
+  requestQueue = requestQueue.then(async () => {
     console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.url}`);
-    
+    await new Promise(res => setTimeout(res, MIN_REQUEST_INTERVAL));
     return config;
-  },
-  (error) => {
-    console.error('❌ API Request Error:', error);
-    return Promise.reject(error);
-  }
-);
+  });
+  return requestQueue;
+});
 
-// Response interceptor
+// Handle responses
 api.interceptors.response.use(
   (response) => {
     console.log(`✅ API Success: ${response.status} ${response.config.url}`);
     return response.data;
   },
-  (error) => {
-    console.error(`❌ API Error: ${error.response?.status} ${error.config?.url}`);
-    
-    if (error.response?.status === 429) {
-      console.error('🚨 Still rate limited - API needs more time');
-    } else if (error.response?.status === 401) {
-      console.error('🔑 Unauthorized - check API key');
-    } else if (error.response?.status === 555) {
-      console.error('🎲 Random API error (expected)');
+  async (error) => {
+    const status = error.response?.status;
+    console.error(`❌ API Error: ${status} ${error.config?.url}`);
+
+    if (status === 429) {
+      const retryAfter = parseInt(error.response.headers['retry-after'] || '5', 10) * 1000;
+      console.error(`🚨 Rate limited — retrying after ${retryAfter}ms`);
+      await new Promise(res => setTimeout(res, retryAfter));
+      return api.request(error.config); // retry original request
     }
-    
+
     return Promise.reject(error);
   }
 );

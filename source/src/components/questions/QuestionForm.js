@@ -1,5 +1,5 @@
+// source/src/components/questions/QuestionForm.js 
 
-// source/src/components/questions/QuestionForm.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createQuestion } from '../../services/questions';
@@ -8,7 +8,8 @@ import MarkdownEditor from '../common/MarkdownEditor';
 const QuestionForm = ({ currentUser, onShowMessage, setLoading, onCancel }) => {
   const [formData, setFormData] = useState({
     title: '',
-    text: ''
+    text: '',
+    tags: ''
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,6 +23,13 @@ const QuestionForm = ({ currentUser, onShowMessage, setLoading, onCancel }) => {
       return;
     }
   }, [currentUser, onShowMessage, onCancel]);
+
+  // Add to characterCounts
+  const characterCounts = {
+    title: formData.title.length,
+    text: formData.text.length,
+    tags: formData.tags.length
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -42,6 +50,22 @@ const QuestionForm = ({ currentUser, onShowMessage, setLoading, onCancel }) => {
       newErrors.text = 'Question body must be 3000 characters or less';
     } else if (formData.text.length < 20) {
       newErrors.text = 'Question body must be at least 20 characters';
+    }
+
+    // Tag validation
+    const tagsArr = formData.tags
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0);
+
+    if (!formData.tags.trim()) {
+      newErrors.tags = 'At least one tag is required';
+    } else if (tagsArr.length > 5) {
+      newErrors.tags = 'No more than 5 tags allowed';
+    } else if (tagsArr.some(tag => tag.length < 2 || tag.length > 15)) {
+      newErrors.tags = 'Each tag must be 2-15 characters';
+    } else if (formData.tags.length > 25) {
+      newErrors.tags = 'Tags cannot be more than 25 characters total';
     }
 
     setErrors(newErrors);
@@ -78,6 +102,13 @@ const QuestionForm = ({ currentUser, onShowMessage, setLoading, onCancel }) => {
       }));
     }
   };
+//handleTagChange might be useless idk
+  const handleTagChange = (value) => {
+    setFormData(prev => ({
+        ...prev,
+        tags: value
+    }));
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -99,7 +130,11 @@ const QuestionForm = ({ currentUser, onShowMessage, setLoading, onCancel }) => {
       const response = await createQuestion({
         creator: currentUser.username,
         title: formData.title.trim(),
-        text: formData.text.trim()
+        text: formData.text.trim(),
+        tags: formData.tags
+          .split(',')
+          .map(tag => tag.trim())
+          .filter(tag => tag.length > 0)
       });
 
       if (response.success) {
@@ -133,10 +168,7 @@ const QuestionForm = ({ currentUser, onShowMessage, setLoading, onCancel }) => {
     }
   };
 
-  const characterCounts = {
-    title: formData.title.length,
-    text: formData.text.length
-  };
+  // If user is not logged in, show message and disable form
 
   if (!currentUser) {
     return (
@@ -213,6 +245,35 @@ const QuestionForm = ({ currentUser, onShowMessage, setLoading, onCancel }) => {
               </div>
               {errors.text && (
                 <div className="text-danger mt-1">{errors.text}</div>
+              )}
+            </div>
+
+            {/* Tags Input */}
+            <div className="mb-3">
+              <label htmlFor="questionTags" className="form-label">
+                Tags <span className="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                className={`form-control ${errors.tags ? 'is-invalid' : ''}`}
+                id="questionTags"
+                name="tags"
+                value={formData.tags}
+                onChange={handleInputChange}
+                placeholder="e.g. javascript, react, api"
+                maxLength={25}
+                disabled={isSubmitting}
+              />
+              <div className="form-text">
+                <span className={characterCounts.tags > 25 ? 'text-danger' : 'text-muted'}>
+                  {characterCounts.tags}/25 characters
+                </span>
+                <span className="ms-3 text-muted">
+                  Separate tags with commas (max 3 tags)
+                </span>
+              </div>
+              {errors.tags && (
+                <div className="invalid-feedback">{errors.tags}</div>
               )}
             </div>
 
